@@ -56,6 +56,45 @@ export default function PreviewPage() {
     return minutes * 60 + seconds;
   };
 
+  const handleExportClip = async () => {
+    if (!videoUrl || currentClip === null) {
+      alert('No video or clip selected');
+      return;
+    }
+
+    const clip = clips[currentClip];
+
+    try {
+      const response = await fetch('/api/export/clip', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          videoUrl: videoUrl,
+          start: clip.start,
+          end: clip.end,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        const link = document.createElement('a');
+        link.href = data.url;
+        link.download = `${clip.title}.mp4`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(data.url);
+      } else {
+        alert(`Error: ${data.error}`);
+      }
+    } catch (error: any) {
+      alert(`Error: ${error.message}`);
+    }
+  };
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-24">
       <div className="flex flex-col items-center justify-center">
@@ -76,6 +115,12 @@ export default function PreviewPage() {
             </button>
           ))}
         </div>
+        <button
+          className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-4"
+          onClick={() => handleExportClip()}
+        >
+          Export Clip
+        </button>
       </div>
     </main>
   );
